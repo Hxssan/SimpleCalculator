@@ -1,0 +1,8 @@
+@WebApplication1_HostAddress = http://localhost:5144
+
+POST {{WebApplication1_HostAddress}}/calculator/add
+Accept: application/json
+
+POST {{WebApplication1_HostAddress}}/calculator/subtract
+Accept: application/json
+###

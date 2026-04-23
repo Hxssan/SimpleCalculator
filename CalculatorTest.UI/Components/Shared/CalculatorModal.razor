@@ -1,0 +1,120 @@
+﻿@using CalculatorTest.UI.Services
+@inject CalculatorApiClient CalculatorApiClient
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <section class="calculator-modal" role="dialog" aria-modal="true" aria-labelledby="calculator-modal-title" @onclick:stopPropagation>
+            <header class="modal-header">
+                <h2 id="calculator-modal-title">Calculator Operation</h2>
+                <button type="button" class="icon-button" aria-label="Close" @onclick="Close">x</button>
+            </header>
+
+            <form @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+                <div class="modal-body">
+                    <div class="field-grid">
+                        <label for="start-value">Start</label>
+                        <InputNumber id="start-value" @bind-Value="_startValue" class="field-input" />
+
+                        <label for="amount-value">Amount</label>
+                        <InputNumber id="amount-value" @bind-Value="_amountValue" class="field-input" />
+                    </div>
+
+                    <div class="operations">
+                        <label for="operation-select">Operation</label>
+                        <InputSelect id="operation-select" @bind-Value="_operation" class="field-input">
+                            <option value="Add">Add</option>
+                            <option value="Subtract">Subtract</option>
+                        </InputSelect>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_resultMessage))
+                    {
+                        <p class="result">@_resultMessage</p>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                    {
+                        <p class="error">@_errorMessage</p>
+                    }
+                </div>
+
+                <footer class="modal-footer">
+                    <button type="button" class="btn-secondary" @onclick="Close">Cancel</button>
+                    <button type="submit" class="btn-primary" disabled="@_isBusy">
+                        @(_isBusy ? "Working..." : "Calculate")
+                    </button>
+                </footer>
+            </form>
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnCompleted { get; set; }
+
+    private long _startValue;
+    private long _amountValue;
+    private string _operation = "Add";
+    private bool _isBusy;
+    private string? _resultMessage;
+    private string? _errorMessage;
+
+    private async Task SubmitAsync()
+    {
+        _isBusy = true;
+        _resultMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            if (_startValue < int.MinValue || _startValue > int.MaxValue ||
+                _amountValue < int.MinValue || _amountValue > int.MaxValue)
+            {
+                _errorMessage = $"Values must be between {int.MinValue} and {int.MaxValue}.";
+                return;
+            }
+
+            var start = (int)_startValue;
+            var amount = (int)_amountValue;
+
+            CalculatorApiResult result;
+            if (_operation == "Add")
+            {
+                result = await CalculatorApiClient.AddAsync(start, amount);
+            }
+            else
+            {
+                result = await CalculatorApiClient.SubtractAsync(start, amount);
+            }
+
+            if (result.Succeeded && result.Result.HasValue)
+            {
+                _resultMessage = $"Result: {result.Result.Value}";
+                await OnCompleted.InvokeAsync(_resultMessage);
+                return;
+            }
+
+            _errorMessage = result.ErrorMessage ?? "Unable to complete request.";
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private Task Close()
+    {
+        _resultMessage = null;
+        _errorMessage = null;
+        _isBusy = false;
+        return OnClose.InvokeAsync();
+    }
+}

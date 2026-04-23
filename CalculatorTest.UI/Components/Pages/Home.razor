@@ -1,0 +1,43 @@
+﻿@page "/"
+
+<PageTitle>Calculator</PageTitle>
+
+<section class="home-shell">
+	<h1>Calculator UI</h1>
+	<p>Use the modal add or subtract.</p>
+
+	<div class="actions">
+		<button class="open-modal" @onclick="OpenModal">Open Calculator</button>
+	</div>
+
+	@if (!string.IsNullOrWhiteSpace(_lastResult))
+	{
+		<p class="last-result">@_lastResult</p>
+	}
+</section>
+
+<CalculatorModal IsOpen="_isModalOpen"
+				 OnClose="CloseModal"
+				 OnCompleted="OnCompleted" />
+
+@code {
+	private bool _isModalOpen;
+	private string? _lastResult;
+
+	private void OpenModal()
+	{
+		_isModalOpen = true;
+	}
+
+	private Task CloseModal()
+	{
+		_isModalOpen = false;
+		return Task.CompletedTask;
+	}
+
+	private Task OnCompleted(string message)
+	{
+		_lastResult = message;
+		return Task.CompletedTask;
+	}
+}

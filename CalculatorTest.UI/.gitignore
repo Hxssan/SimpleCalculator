@@ -1,0 +1,9 @@
+﻿bin/
+obj/
+
+# Rider / VS
+.idea/
+.vs/
+*.user
+*.suo
+
